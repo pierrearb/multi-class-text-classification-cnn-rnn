@@ -7,7 +7,6 @@ import pickle
 import logging
 import data_helper
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from text_cnn_rnn import TextCNNRNN
 from sklearn.model_selection import train_test_split
@@ -21,7 +20,7 @@ def train_cnn_rnn():
             os.path.exists('./data/y.p') and \
             os.path.exists('./data/vocabulary.p') and \
             os.path.exists('./data/vocabulary_inv.p') and \
-            os.path.exists('labels.p'):
+            os.path.exists('./data/labels.p'):
         x_ = pickle.load(open("./data/x.p", "rb"))
         y_ = pickle.load(open("./data/y.p", "rb"))
         vocabulary = pickle.load(open("./data/vocabulary.p", "rb"))
@@ -62,14 +61,14 @@ def train_cnn_rnn():
             cnn_rnn = TextCNNRNN(
                 embedding_mat=embedding_mat,
                 sequence_length=x_train.shape[1],
-                num_classes = y_train.shape[1],
+                num_classes=y_train.shape[1],
                 non_static=params['non_static'],
                 hidden_unit=params['hidden_unit'],
                 max_pool_size=params['max_pool_size'],
                 filter_sizes=map(int, params['filter_sizes'].split(",")),
-                num_filters = params['num_filters'],
-                embedding_size = params['embedding_dim'],
-                l2_reg_lambda = params['l2_reg_lambda'])
+                num_filters=params['num_filters'],
+                embedding_size=params['embedding_dim'],
+                l2_reg_lambda=params['l2_reg_lambda'])
 
             global_step = tf.Variable(0, name='global_step', trainable=False)
             optimizer = tf.train.RMSPropOptimizer(1e-3, decay=0.9)
@@ -110,8 +109,8 @@ def train_cnn_rnn():
                     [global_step, cnn_rnn.loss, cnn_rnn.accuracy, cnn_rnn.num_correct, cnn_rnn.predictions], feed_dict)
                 return accuracy, loss, num_correct, predictions
 
-            saver = tf.train.Saver(tf.all_variables())
-            sess.run(tf.initialize_all_variables())
+            saver = tf.train.Saver(tf.global_variables())
+            sess.run(tf.global_variables_initializer())
 
             # Training starts here
             train_batches = data_helper.batch_iter(list(zip(x_train, y_train)), params['batch_size'], params['num_epochs'])

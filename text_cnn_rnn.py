@@ -24,7 +24,7 @@ class TextCNNRNN(object):
             emb = tf.expand_dims(self.embedded_chars, -1)
 
         pooled_concat = []
-        reduced = np.int32(np.ceil((sequence_length) * 1.0 / max_pool_size))
+        reduced = np.int32(np.ceil(sequence_length * 1.0 / max_pool_size))
 
         for i, filter_size in enumerate(filter_sizes):
             with tf.name_scope('conv-maxpool-%s' % filter_size):
@@ -51,14 +51,14 @@ class TextCNNRNN(object):
         pooled_concat = tf.concat(pooled_concat, 2)
         pooled_concat = tf.nn.dropout(pooled_concat, self.dropout_keep_prob)
 
-        # lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units=hidden_unit)
-        lstm_cell = tf.contrib.rnn.GRUCell(num_units=hidden_unit)
-        lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob=self.dropout_keep_prob)
+        # lstm_cell = tf.contrib.rnn.LSTMCell(num_units=hidden_unit)
+        gru_cell = tf.contrib.rnn.GRUCell(num_units=hidden_unit)
+        gru_cell = tf.contrib.rnn.DropoutWrapper(gru_cell, output_keep_prob=self.dropout_keep_prob)
 
-        self._initial_state = lstm_cell.zero_state(self.batch_size, tf.float32)
-        # inputs = [tf.squeeze(input_, [1]) for input_ in tf.split(1, reduced, pooled_concat)]
-        inputs = [tf.squeeze(input_, [1]) for input_ in tf.split(pooled_concat, reduced, 1)]
-        outputs, state = tf.contrib.rnn(lstm_cell, inputs, initial_state=self._initial_state, sequence_length=self.real_len)
+        self._initial_state = gru_cell.zero_state(self.batch_size, tf.float32)
+        inputs = [tf.squeeze(input_, [1]) for input_ in tf.split(pooled_concat, int(reduced), axis=1)]
+        outputs, state = tf.contrib.rnn.static_rnn(gru_cell, inputs, initial_state=self._initial_state,
+                                        sequence_length=self.real_len)
 
         # Collect the appropriate last words into variable output (dimension = batch x embedding_size)
         output = outputs[0]
@@ -70,7 +70,7 @@ class TextCNNRNN(object):
                 ind = tf.to_float(ind)
                 ind = tf.expand_dims(ind, -1)
                 mat = tf.matmul(ind, one)
-                output = tf.add(tf.mul(output, mat), tf.mul(outputs[i], 1.0 - mat))
+                output = tf.add(tf.multiply(output, mat), tf.multiply(outputs[i], 1.0 - mat))
 
         with tf.name_scope('output'):
             self.W = tf.Variable(tf.truncated_normal([hidden_unit, num_classes], stddev=0.1), name='W')
@@ -81,7 +81,7 @@ class TextCNNRNN(object):
             self.predictions = tf.argmax(self.scores, 1, name='predictions')
 
         with tf.name_scope('loss'):
-            losses = tf.nn.softmax_cross_entropy_with_logits(self.scores, self.input_y)
+            losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.scores, labels=self.input_y)
             self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
 
         with tf.name_scope('accuracy'):
