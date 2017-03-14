@@ -32,10 +32,10 @@ def train_cnn_rnn():
     training_config = sys.argv[2]
     params = json.loads(open(training_config).read())
 
-    # Assign a 300 dimension vector to each word
-    word_embeddings = data_helper.load_embeddings(vocabulary)
+    # Assign a n dimension vector to each word
+    word_embeddings = data_helper.load_embeddings(vocabulary, dim=params['embedding_dim'])
     embedding_mat = [word_embeddings[word] for index, word in enumerate(vocabulary_inv)]
-    embedding_mat = np.array(embedding_mat, dtype = np.float32)
+    embedding_mat = np.array(embedding_mat, dtype=np.float32)
 
     # Split the original dataset into train set and test set
     x, x_test, y, y_test = train_test_split(x_, y_, test_size=0.1)
@@ -71,7 +71,9 @@ def train_cnn_rnn():
                 l2_reg_lambda=params['l2_reg_lambda'])
 
             global_step = tf.Variable(0, name='global_step', trainable=False)
-            optimizer = tf.train.RMSPropOptimizer(1e-3, decay=0.9)
+            # optimizer = tf.train.RMSPropOptimizer(1e-3, decay=0.9)
+            optimizer = tf.train.AdamOptimizer(learning_rate=0.0005, beta1=0.9, beta2=0.999, epsilon=1e-08,
+                                               use_locking=False, name='Adam')
             grads_and_vars = optimizer.compute_gradients(cnn_rnn.loss)
             train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
@@ -117,7 +119,9 @@ def train_cnn_rnn():
             best_accuracy, best_at_step = 0, 0
 
             # Train the model with x_train and y_train
+            i = 0
             for train_batch in train_batches:
+                logging.info('Training on batch: {}'.format(i))
                 x_train_batch, y_train_batch = zip(*train_batch)
                 train_step(x_train_batch, y_train_batch)
                 current_step = tf.train.global_step(sess, global_step)
@@ -139,6 +143,7 @@ def train_cnn_rnn():
                         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         logging.critical('Saved model {} at step {}'.format(path, best_at_step))
                         logging.critical('Best accuracy {} at step {}'.format(best_accuracy, best_at_step))
+                i += 1
             logging.critical('Training is complete, testing the best model on x_test and y_test')
 
             # Evaluate x_test and y_test

@@ -37,10 +37,10 @@ def clean_str(s):
     return s.strip().lower()
 
 
-def load_embeddings(vocabulary):
+def load_embeddings(vocabulary, dim=300):
     word_embeddings = {}
     for word in vocabulary:
-        word_embeddings[word] = np.random.uniform(-0.25, 0.25, 300)
+        word_embeddings[word] = np.random.uniform(-0.25, 0.25, dim)
     return word_embeddings
 
 
