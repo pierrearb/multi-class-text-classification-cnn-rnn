@@ -91,31 +91,6 @@ def batch_iter(data, batch_size, num_epochs, shuffle=True):
             end_index = min((batch_num + 1) * batch_size, data_size)
             yield shuffled_data[start_index:end_index]
 
-# def load_data(filename):
-# 	df = pd.read_csv(filename, compression='zip')
-# 	selected = ['Category', 'Descript']
-# 	non_selected = list(set(df.columns) - set(selected))
-#
-# 	df = df.drop(non_selected, axis=1)
-# 	df = df.dropna(axis=0, how='any', subset=selected)
-# 	df = df.reindex(np.random.permutation(df.index))
-#
-# 	labels = sorted(list(set(df[selected[0]].tolist())))
-# 	num_labels = len(labels)
-# 	one_hot = np.zeros((num_labels, num_labels), int)
-# 	np.fill_diagonal(one_hot, 1)
-# 	label_dict = dict(zip(labels, one_hot))
-#
-# 	x_raw= df[selected[1]].apply(lambda x: clean_str(x).split(' ')).tolist()
-# 	y_raw = df[selected[0]].apply(lambda y: label_dict[y]).tolist()
-#
-# 	x_raw = pad_sentences(x_raw)
-# 	vocabulary, vocabulary_inv = build_vocab(x_raw)
-#
-# 	x = np.array([[vocabulary[word] for word in sentence] for sentence in x_raw])
-# 	y = np.array(y_raw)
-# 	return x, y, vocabulary, vocabulary_inv, df, labels
-
 
 def load_data(filename):
     df = pd.read_json(filename, lines=True)
