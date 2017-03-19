@@ -60,15 +60,12 @@ def train_cnn():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             cnn = TextCNN(
-                embedding_mat=embedding_mat,
                 sequence_length=x_train.shape[1],
                 num_classes=y_train.shape[1],
-                non_static=params['non_static'],
-                hidden_unit=params['hidden_unit'],
-                max_pool_size=params['max_pool_size'],
-                filter_sizes=map(int, params['filter_sizes'].split(",")),
-                num_filters=params['num_filters'],
+                vocab_size=len(vocabulary),
                 embedding_size=params['embedding_dim'],
+                filter_sizes=list(map(int, params['filter_sizes'].split(","))),
+                num_filters=params['num_filters'],
                 l2_reg_lambda=params['l2_reg_lambda'])
 
             global_step = tf.Variable(0, name='global_step', trainable=False)
