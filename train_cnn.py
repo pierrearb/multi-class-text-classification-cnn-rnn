@@ -60,6 +60,8 @@ def train_cnn():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             cnn = TextCNN(
+                embedding_mat=embedding_mat,
+                non_static=params['non_static'],
                 sequence_length=x_train.shape[1],
                 num_classes=y_train.shape[1],
                 vocab_size=len(vocabulary),
@@ -70,7 +72,7 @@ def train_cnn():
 
             global_step = tf.Variable(0, name='global_step', trainable=False)
             # optimizer = tf.train.RMSPropOptimizer(1e-3, decay=0.9)
-            optimizer = tf.train.AdamOptimizer(learning_rate=0.0005, beta1=0.9, beta2=0.999, epsilon=1e-08,
+            optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, beta1=0.9, beta2=0.999, epsilon=1e-08,
                                                use_locking=False, name='Adam')
             grads_and_vars = optimizer.compute_gradients(cnn.loss)
             train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
@@ -130,14 +132,15 @@ def train_cnn():
                     cnn.input_y: y_batch,
                     cnn.dropout_keep_prob: 1.0,
                 }
-                step, summaries, loss_, accuracy_ = sess.run(
-                    [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
+                step, summaries, loss_, accuracy_, predictions_ = sess.run(
+                    [global_step, dev_summary_op, cnn.loss, cnn.accuracy, cnn.predictions],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
+                print("evaluation on test set:")
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss_, accuracy_))
                 if writer:
                     writer.add_summary(summaries, step)
-                return accuracy_, loss_, predictions
+                return accuracy_, loss_, predictions_
 
             saver = tf.train.Saver(tf.global_variables())
             sess.run(tf.global_variables_initializer())
